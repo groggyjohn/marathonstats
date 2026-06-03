@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>London Marathon Stats</title>
+
+    <!-- Load Plotly for charting -->
+    <script src="https://cdn.plot.ly/plotly-3.5.1.min.js"></script>
+
+    <script src="data.js"></script>
+    <script src="analysis.js"></script>
+
+    <style>
+        /* The container holding all your plot instances */
+        .plots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        /* Styling for each individual plot "card" */
+        .plot-instance {
+            background: white;
+            border: 1px solid #e1e4e8;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Make the internal controls look like a neat toolbar */
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+            margin-bottom: 15px;
+        }
+
+        .controls-row select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+        }
+
+        th,
+        td {
+            padding: 10px 15px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f1f3f5;
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Align the text labels to the left and numbers to the right */
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .dashboard {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            min-width: 500px;
+            margin: 0 auto;
+        }
+
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        select {
+            padding: 6px 12px;
+            font-size: 15px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            min-width: 120px;
+        }
+
+        label {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+
+        <div id="tableContainer"> </div>
+        <div id="summaryChartContainer"></div>
+
+        <hr style="margin: 40px 0;">
+
+        <h3>Comparative Analysis</h3>
+        <p style="color: #666;">Use the filters below to compare different years or categories side-by-side.</p>
+
+        <div class="plots-grid">
+            <div id="plot-area-1" class="plot-instance"></div>
+            <div id="plot-area-2" class="plot-instance"></div>
+        </div>
+    </div>
+
+    <script>
+
+        // Wait for the page to load, then initialize using the 'histogramData' from data.js
+        window.onload = function () {
+            // Draw the new summary widgets first
+            drawSummaryTable(); // Injects the text table
+            drawSummaryChart(); // Injects the horizontal bar chart
+
+            createHistogramInstance('plot-area-1');
+            createHistogramInstance('plot-area-2');
+        };
+
+        function drawSummaryChart() {
+            // 1. Get only the "All Categories" rows
+            const summaryData = histogramData.filter(row => row.category === 'All Categories');
+
+            // 2. Get unique years and sort them HIGHEST to LOWEST
+            const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => a - b);
+            const genders = [...new Set(summaryData.map(row => row.gender))];
+
+            // 3. Create traces for each gender
+            const traces = genders.map(gender => {
+                const xCounts = years.map(year => {
+                    // Sum all bins for this specific year and gender
+                    return summaryData
+                        .filter(row => row.year === year && row.gender === gender)
+                        .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
+                });
+
+                return {
+                    x: xCounts,
+                    y: years.map(y => String(y)), // Labels for Y axis
+                    name: gender,
+                    type: 'bar',
+                    orientation: 'h', // Horizontal bar chart
+                    marker: {
+                        color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other']
+                    }
+                };
+            });
+
+            const layout = {
+                title: 'Yearly Finisher Summary',
+                barmode: 'stack',
+                xaxis: { title: 'Total Finisher Count' },
+
+                // Update this block right here:
+                yaxis: {
+                    title: '',
+                    type: 'category', // Forces Plotly to treat the numeric strings as separate buckets
+                    tickmode: 'linear' // Ensures EVERY single category entry gets a distinct label
+                },
+
+                margin: { t: 50, l: 50, r: 50, b: 50 },
+                legend: { orientation: 'h', y: -0.2 },
+                dragmode: false,
+                autosize: true,
+            };
+
+            const figure = {
+                displaylogo: false,
+                modeBarButtonsToRemove: ['toImage', 'pan', 'select', 'zoom', 'autoScale', 'lasso'],
+                responsive: true,
+            }
+
+            Plotly.newPlot('summaryChartContainer', traces, layout, figure);
+        }
+
+        function drawSummaryTable() {
+            // 1. Isolate the "All Categories" rows
+            const summaryData = histogramData.filter(row => row.category === 'All Categories');
+
+            // 2. Extract unique sorted years (highest to lowest) and unique genders
+            const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => b - a);
+            const genders = [...new Set(summaryData.map(row => row.gender))].sort();
+
+            // 3. Build the table header dynamically
+            let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Total Finishers</th>
+                        ${genders.map(g => `<th>${g.charAt(0).toUpperCase() + g.slice(1)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+            // 4. Populate table rows for each year
+            years.forEach(year => {
+                // Calculate overall total for this year
+                const yearTotal = summaryData
+                    .filter(row => row.year === year)
+                    .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
+
+                tableHtml += `
+                <tr>
+                    <td><strong>${year}</strong></td>
+                    <td><strong>${yearTotal.toLocaleString()}</strong></td>
+            `;
+
+                // Calculate total for each individual gender column
+                genders.forEach(gender => {
+                    const genderTotal= summaryData
+                        .filter(row => row.year === year && row.gender === gender)
+                        .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
+
+                    const asPercentStr = (100*genderTotal/yearTotal).toFixed(1).toLocaleString();
+
+                    tableHtml += `<td>${genderTotal.toLocaleString()} (${asPercentStr}%)</td>`;
+                });
+
+                tableHtml += `</tr>`;
+            });
+
+            tableHtml += `
+                </tbody>
+            </table>
+        `;
+
+            // 5. Inject the completed table HTML into our placeholder container
+            document.getElementById('tableContainer').innerHTML = tableHtml;
+        }
+    </script>
+
+</body>
+
+</html>
