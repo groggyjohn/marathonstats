@@ -17,7 +17,7 @@ function createHistogramInstance(wrapperId) {
 
     // 2. Inject the HTML controls for this instance
     wrapper.innerHTML = `
-        <div class="controls-row" style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+        <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
             <select id="${yearId}"></select>
             <select id="${catId}"></select>
             <div>
@@ -25,7 +25,7 @@ function createHistogramInstance(wrapperId) {
             <label><input type="radio" name="${modeName}" value="stack"> Stack</label>
             </div>
         </div>
-        <div id="${chartId}" style="height: 500px;"></div>
+        <div id="${chartId}" style="width: 100%"></div>
     `;
 
     // 3. Define the internal draw function for THIS instance
@@ -114,6 +114,7 @@ function createHistogramInstance(wrapperId) {
 
         const catTitleText = cat === 'all' ? 'All Categories' : `Category: ${cat}`;
         const layout = {
+            height: 380,
             title: {
                 text: `Mass Finish Distribution for ${year}<br><span style="font-size:14px;color:#666;">${catTitleText} (2.5 min bins)</span>`,
             },
@@ -121,7 +122,7 @@ function createHistogramInstance(wrapperId) {
             hovermode: 'x',
             xaxis: {
                 title: { text: 'Finish Time (HH:MM:SS)' },
-                nticks:11,
+                nticks:10,
                 range: [0, (8 - 2) * 60 / 2.5],
                 autorange: false,
                 unifiedhovertitle: {
@@ -136,8 +137,8 @@ function createHistogramInstance(wrapperId) {
                     include: 5, // 5 value means we dont get fractional finishers
                 }
             },
-            margin: { t: 80, l: 50, r: 50, b: 50 },
-            legend: {
+            margin: { t: 75, l: 50, r: 50, b: 50 },
+            legend: { 
                 traceorder: 'normal',
                 orientation: 'v',
                 xanchor: "right",
