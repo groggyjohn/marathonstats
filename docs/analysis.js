@@ -6,6 +6,122 @@ const GENDER_COLORS = {
 };
 const exactOrder = ['male', 'female', 'non-binary'];
 
+function drawSummaryChart(wrapperId, mode) {
+    const wrapper = document.getElementById(wrapperId);
+    const modeName = `${wrapperId}-mode`;
+    const chartId = `${wrapperId}-chart`;
+
+    wrapper.innerHTML = `
+        <div id="${chartId}" style="width: 100%"></div>
+    `;
+
+    // 1. Get only the "All Categories" rows
+    const summaryData = histogramData.filter(row => row.category === 'All Categories');
+
+    // 2. Get unique years and sort them HIGHEST to LOWEST
+    const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => a - b);
+    const genders = [...new Set(summaryData.map(row => row.gender))];
+
+    // Compute all totals in a single pass: by year and by year+gender
+    const totals = summaryData.reduce((acc, row) => {
+        // same as
+        // const year = row.year;
+        // const gender = row.gender;
+        const { year, gender } = row;
+
+        acc.byYear[year] = (acc.byYear[year] || 0) + Math.sumPrecise(row.bin_counts);
+        if (!acc.byYearGender[year]) acc.byYearGender[year] = {};
+        acc.byYearGender[year][gender] = (acc.byYearGender[year][gender] || 0) + Math.sumPrecise(row.bin_counts);
+        return acc;
+    }, { byYear: {}, byYearGender: {} });
+
+
+    const figure = {
+        displaylogo: false,
+        displayModeBar: false,
+        //modeBarButtonsToRemove: ['toImage', 'pan', 'select', 'zoom', 'autoScale', 'lasso'],
+        responsive: true,
+    }
+
+    // Render function responds to the radio toggles
+    const render = () => {
+
+        // Gender traces (counts)
+        const genderCountTraces = genders.map(gender => ({
+            x: years.map(y => String(y)),
+            y: years.map(year => totals.byYearGender[year]?.[gender] || 0),
+            name: gender,
+            type: 'lines+markers',
+            marker: { color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other'] }
+        }));
+
+        // Prepare layout and figure objects (we'll update y-axis based on mode)
+        const layout = {
+            height: 400,
+            title: { text: 'TBD' },
+            hovermode: 'x',
+
+            yaxis: {
+                ticksuffix: "",
+            },
+
+            margin: { t: 50, l: 50, r: 50, b: 50 },
+            legend: {
+                orientation: "h",
+                xanchor: "left",
+            },
+            autosize: true,
+            dragmode: false,
+        };
+
+        if (mode === 'count') {
+            // Show overall + gender counts
+            const overallTrace = {
+                x: years.map(y => String(y)),
+                y: years.map(year => totals.byYear[year] || 0),
+                name: 'all',
+                type: 'lines+markers',
+                marker: { color: GENDER_COLORS['other'] }
+            };
+
+            layout.title.text = "Mass Finishers by Count"
+            layout.yaxis.ticksuffix = '';
+
+            Plotly.newPlot(chartId, [overallTrace].concat(genderCountTraces), layout, figure);
+        } else {
+            // Percent mode: compute percent per year for each gender and omit 'all' trace
+            const genderPercentTraces = genders.map(gender => {
+                const percentArray = years.map(year => {
+                    const yearTotal = totals.byYear[year] || 0;
+                    if (!yearTotal) return 0;
+                    return (totals.byYearGender[year]?.[gender] || 0) / yearTotal * 100;
+                });
+
+                const hoverText = percentArray.map(p => `${p.toFixed(1)}%`);
+
+                return {
+                    x: years.map(y => String(y)),
+                    y: percentArray,
+                    text: hoverText,
+                    hovertemplate: '%{text}',
+                    name: gender,
+                    type: 'lines+markers',
+                    marker: { color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other'] }
+                };
+            });
+
+            layout.title.text = "Mass Finishers by Percentage"
+            layout.yaxis.tickformat = '.f';
+            layout.yaxis.ticksuffix = '%';
+
+            Plotly.newPlot(chartId, genderPercentTraces, layout, figure);
+        }
+    };
+
+    // Initial render
+    render();
+}
+
 function createHistogramInstance(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
 
@@ -122,12 +238,9 @@ function createHistogramInstance(wrapperId) {
             hovermode: 'x',
             xaxis: {
                 title: { text: 'Finish Time (HH:MM:SS)' },
-                nticks:10,
+                nticks: 10,
                 range: [0, (8 - 2) * 60 / 2.5],
                 autorange: false,
-                unifiedhovertitle: {
-                    text: "Finishers from %{x|%H:%M:%S}"
-                }
             },
             yaxis: {
                 title: { text: 'Number of Finishers' },
@@ -138,7 +251,7 @@ function createHistogramInstance(wrapperId) {
                 }
             },
             margin: { t: 75, l: 50, r: 50, b: 50 },
-            legend: { 
+            legend: {
                 traceorder: 'normal',
                 orientation: 'v',
                 xanchor: "right",
@@ -182,4 +295,61 @@ function createHistogramInstance(wrapperId) {
 
     // Initial run
     updateCats();
+}
+
+function drawSummaryTable() {
+    // 1. Isolate the "All Categories" rows
+    const summaryData = histogramData.filter(row => row.category === 'All Categories');
+
+    // 2. Extract unique sorted years (highest to lowest) and unique genders
+    const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => b - a);
+    const genders = [...new Set(summaryData.map(row => row.gender))].sort();
+
+    // 3. Build the table header dynamically
+    let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Total Finishers</th>
+                        ${genders.map(g => `<th>${g.charAt(0).toUpperCase() + g.slice(1)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+    // 4. Populate table rows for each year
+    years.forEach(year => {
+        // Calculate overall total for this year
+        const yearTotal = summaryData
+            .filter(row => row.year === year)
+            .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
+
+        tableHtml += `
+                <tr>
+                    <td><strong>${year}</strong></td>
+                    <td><strong>${yearTotal.toLocaleString()}</strong></td>
+            `;
+
+        // Calculate total for each individual gender column
+        genders.forEach(gender => {
+            const genderTotal = summaryData
+                .filter(row => row.year === year && row.gender === gender)
+                .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
+
+            const asPercentStr = (100 * genderTotal / yearTotal).toFixed(1).toLocaleString();
+
+            tableHtml += `<td>${genderTotal.toLocaleString()} (${asPercentStr}%)</td>`;
+        });
+
+        tableHtml += `</tr>`;
+    });
+
+    tableHtml += `
+                </tbody>
+            </table>
+        `;
+
+    // 5. Inject the completed table HTML into our placeholder container
+    document.getElementById('tableContainer').innerHTML = tableHtml;
 }

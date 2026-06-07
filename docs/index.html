@@ -41,7 +41,7 @@
         [id$="-chart"] {
             width: 100% !important;
 
-            /* INFO: to override plotly settings */ 
+            /* INFO: to override plotly settings */
             /* height: 400px !important; */
         }
 
@@ -148,10 +148,10 @@
 <body>
 
     <div class="dashboard">
-
-        <div id="tableContainer"> </div>
-        <div id="summaryChartContainer"></div>
-
+        <div class="plots-grid">
+            <div id="summary-count" class="plot-instance"></div>
+            <div id="summary-percent" class="plot-instance"></div>
+        </div>
         <hr style="margin: 40px 0;">
 
         <h3>Comparative Analysis</h3>
@@ -168,125 +168,15 @@
         // Wait for the page to load, then initialize using the 'histogramData' from data.js
         window.onload = function () {
             // Draw the new summary widgets first
-            drawSummaryTable(); // Injects the text table
-            drawSummaryChart(); // Injects the horizontal bar chart
+            //drawSummaryTable(); // Injects the text table
+            drawSummaryChart('summary-count', 'count');
+            drawSummaryChart('summary-percent', 'percent');
 
             createHistogramInstance('plot-area-1');
             createHistogramInstance('plot-area-2');
         };
 
-        function drawSummaryChart() {
-            // 1. Get only the "All Categories" rows
-            const summaryData = histogramData.filter(row => row.category === 'All Categories');
 
-            // 2. Get unique years and sort them HIGHEST to LOWEST
-            const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => a - b);
-            const genders = [...new Set(summaryData.map(row => row.gender))];
-
-            // 3. Create traces for each gender
-            const traces = genders.map(gender => {
-                const xCounts = years.map(year => {
-                    // Sum all bins for this specific year and gender
-                    return summaryData
-                        .filter(row => row.year === year && row.gender === gender)
-                        .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
-                });
-
-                return {
-                    x: xCounts,
-                    y: years.map(y => String(y)), // Labels for Y axis
-                    name: gender,
-                    type: 'bar',
-                    orientation: 'h', // Horizontal bar chart
-                    marker: {
-                        color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other']
-                    }
-                };
-            });
-
-            const layout = {
-                title: 'Yearly Finisher Summary',
-                barmode: 'stack',
-                xaxis: { title: 'Total Finisher Count' },
-
-                // Update this block right here:
-                yaxis: {
-                    title: '',
-                    type: 'category', // Forces Plotly to treat the numeric strings as separate buckets
-                    tickmode: 'linear' // Ensures EVERY single category entry gets a distinct label
-                },
-
-                margin: { t: 50, l: 50, r: 50, b: 50 },
-                legend: { orientation: 'h', y: -0.2 },
-                dragmode: false,
-                autosize: true,
-            };
-
-            const figure = {
-                displaylogo: false,
-                modeBarButtonsToRemove: ['toImage', 'pan', 'select', 'zoom', 'autoScale', 'lasso'],
-                responsive: true,
-            }
-
-            Plotly.newPlot('summaryChartContainer', traces, layout, figure);
-        }
-
-        function drawSummaryTable() {
-            // 1. Isolate the "All Categories" rows
-            const summaryData = histogramData.filter(row => row.category === 'All Categories');
-
-            // 2. Extract unique sorted years (highest to lowest) and unique genders
-            const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => b - a);
-            const genders = [...new Set(summaryData.map(row => row.gender))].sort();
-
-            // 3. Build the table header dynamically
-            let tableHtml = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Year</th>
-                        <th>Total Finishers</th>
-                        ${genders.map(g => `<th>${g.charAt(0).toUpperCase() + g.slice(1)}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-            // 4. Populate table rows for each year
-            years.forEach(year => {
-                // Calculate overall total for this year
-                const yearTotal = summaryData
-                    .filter(row => row.year === year)
-                    .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
-
-                tableHtml += `
-                <tr>
-                    <td><strong>${year}</strong></td>
-                    <td><strong>${yearTotal.toLocaleString()}</strong></td>
-            `;
-
-                // Calculate total for each individual gender column
-                genders.forEach(gender => {
-                    const genderTotal = summaryData
-                        .filter(row => row.year === year && row.gender === gender)
-                        .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
-
-                    const asPercentStr = (100 * genderTotal / yearTotal).toFixed(1).toLocaleString();
-
-                    tableHtml += `<td>${genderTotal.toLocaleString()} (${asPercentStr}%)</td>`;
-                });
-
-                tableHtml += `</tr>`;
-            });
-
-            tableHtml += `
-                </tbody>
-            </table>
-        `;
-
-            // 5. Inject the completed table HTML into our placeholder container
-            document.getElementById('tableContainer').innerHTML = tableHtml;
-        }
     </script>
 
 </body>
