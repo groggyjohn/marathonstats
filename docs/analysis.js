@@ -5,6 +5,79 @@ const GENDER_COLORS = {
     'other': '#7f7f7f'       // Gray (for any fallback)
 };
 const exactOrder = ['male', 'female', 'non-binary'];
+const stringHeaders = ["year", "gender", "category"];
+const timeHeaders = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
+
+function populateTable(tableId) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+
+    histogramData.forEach(row => {
+        const tr = document.createElement('tr');
+
+        stringHeaders.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = row[header];
+            // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
+            td.setAttribute('data-label', header);
+            tr.appendChild(td);
+        });
+        timeHeaders.forEach(header => {
+            const td = document.createElement('td');
+            td.textContent = formatSeconds(row[header]);
+            // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
+            td.setAttribute('data-label', header);
+            tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+    });
+}
+
+function applyRowspan(tableId) {
+    const table = document.getElementById(tableId);
+    // Grab all rows inside the table body
+    const rows = table.querySelectorAll('tbody tr');
+
+    let previousYearCell = null;
+    let previousGenderCell = null;
+    let rowspanCount = 1;
+
+    for (let i = 0; i < rows.length; i++) {
+        // Get the specific cell in the target column
+        const yearCell = rows[i].cells[0]
+        const genderCell = rows[i].cells[1];
+        yearCell.classList.add('group-cell');
+        genderCell.classList.add('group-cell');
+
+        // If this cell's text matches the cell directly above it
+        if (previousGenderCell && genderCell.textContent === previousGenderCell.textContent) {
+            rowspanCount++;
+            // Apply the rowspan to the topmost matching cell
+            previousYearCell.setAttribute('rowspan', rowspanCount);
+            previousGenderCell.setAttribute('rowspan', rowspanCount);
+            // Hide this duplicate cell on PC, but keep it in the DOM for mobile
+            yearCell.classList.add('hide-on-pc');
+            genderCell.classList.add('hide-on-pc');
+        } else {
+            // The value changed (e.g., from 2023 to 2024), reset tracking
+            previousYearCell = yearCell;
+            previousGenderCell = genderCell;
+            rowspanCount = 1;
+            rows[i]
+        }
+    }
+}
+
+function formatSeconds(totalSeconds) {
+    if (totalSeconds === 0) {
+        return '-';
+    }
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    //return "100";
+    return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
 
 function drawSummaryChart(wrapperId, mode) {
     const wrapper = document.getElementById(wrapperId);
@@ -63,6 +136,9 @@ function drawSummaryChart(wrapperId, mode) {
 
             yaxis: {
                 ticksuffix: "",
+                autorangeoptions: {
+                    include: 0,
+                },
             },
 
             margin: { t: 50, l: 50, r: 50, b: 50 },

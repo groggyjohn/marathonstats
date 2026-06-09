@@ -13,6 +13,133 @@
     <script src="analysis.js"></script>
 
     <style>
+        .group-cell {
+            background: #f0f4f8;
+            font-weight: 700;
+            color: #243b53;
+            vertical-align: top;
+            text-align: left;
+            background: linear-gradient(135deg, #e0e7ff, #f5f3ff);
+        }
+
+        /* Base Styles & PC Monitor Layout */
+        body,
+        html {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            max-width: 1400px;
+            margin: auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        ul li {
+            padding: 5px 0px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            position: sticky;
+            top: 0px;
+            background-color: #0056b3;
+            color: white;
+            font-weight: 600;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+
+        /* Mobile Screen Layout (Card Style) */
+        @media screen and (max-width: 768px) {
+            table {
+                box-shadow: none;
+                background-color: transparent;
+            }
+
+            /* Force table elements to not behave like a table */
+            table,
+            thead,
+            tbody,
+            th,
+            td,
+            tr {
+                display: block;
+            }
+
+            /* Hide table headers visually but remain accessible to screen readers */
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            tr {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                padding: 10px 0;
+            }
+
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%;
+                /* Make room for the pseudo-element label */
+                text-align: right;
+                /* Right align the actual data */
+            }
+
+            td:last-child {
+                border-bottom: 0;
+            }
+
+            /* Inject the column header as a label using the data-label attribute */
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 15px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+        }
+
+        /* Only hide the duplicate merged cells on PC monitors */
+        @media screen and (min-width: 769px) {
+            .hide-on-pc {
+                display: none;
+            }
+        }
+
         /* The container holding all your plot instances */
         .plots-grid {
             display: grid;
@@ -62,46 +189,10 @@
             border: 1px solid #ccc;
         }
 
-        table {
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: white;
-        }
 
-        th,
-        td {
-            padding: 10px 15px;
-            text-align: right;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f1f3f5;
-            color: #333;
-            font-weight: 600;
-        }
-
-        /* Align the text labels to the left and numbers to the right */
-        th:first-child,
-        td:first-child {
-            text-align: left;
-        }
-
-        tr:hover {
-            background-color: #f8f9fa;
-        }
 
         * {
             box-sizing: border-box;
-        }
-
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            overflow-x: hidden;
-            background-color: #f8f9fa;
         }
 
         .dashboard {
@@ -109,7 +200,6 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 1200px;
             width: 100%;
             margin: 0 auto;
         }
@@ -146,21 +236,69 @@
 </head>
 
 <body>
-
+    <noscript>
+        <style>
+            .noscript-message {
+                color: red;
+                font-weight: bold;
+            }
+        </style>
+        <p class="noscript-message">
+            Javascript is disabled. This page doesn't work without javascript enabled. 
+        </p>
+        <p class="noscript-message">
+            Please enable javascript to view the plots and tables.
+        </p>
+    </noscript>
     <div class="dashboard">
+        <h2>Outline</h2>
+        <p>
+            This page presents an analysis of the finishing times of the London Marathon Mass Participation runners.
+        </p>
+        <h2>Overall</h2>
         <div class="plots-grid">
             <div id="summary-count" class="plot-instance"></div>
             <div id="summary-percent" class="plot-instance"></div>
         </div>
-        <hr style="margin: 40px 0;">
 
-        <h3>Comparative Analysis</h3>
+        <h2>Comparative Analysis</h2>
         <p style="color: #666;">Use the filters below to compare different years or categories side-by-side.</p>
 
         <div class="plots-grid">
             <div id="plot-area-1" class="plot-instance"></div>
             <div id="plot-area-2" class="plot-instance"></div>
         </div>
+
+
+        <h2>Category Details</h2>
+        <p>Comments:</p>
+        <ul>
+            <li>1st Quartile: 25% of finishers in category finished before this time.</li>
+            <li>2nd Quartile: 50% of finishers in category finished before this time.</li>
+            <li>3rd Quartile: 75% of finishers in category finished before this time.</li>
+            <li>Peak: Approximate time when most runners in category were finishing.
+                If no obvious single peak, entry is left blank.
+            </li>
+        </ul>
+
+        <table id="metricsTable">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Gender</th>
+                    <th>Age Cat</th>
+                    <th>Fastest</th>
+                    <th>Slowest</th>
+                    <th>Average</th>
+                    <th>1st Quartile</th>
+                    <th>2nd Quartile</th>
+                    <th>3rd Quartile</th>
+                    <th>Peak</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
     </div>
 
     <script>
@@ -176,6 +314,8 @@
             createHistogramInstance('plot-area-2');
         };
 
+        populateTable('metricsTable');
+        applyRowspan('metricsTable');
 
     </script>
 
