@@ -8,6 +8,20 @@ const exactOrder = ['male', 'female', 'non-binary'];
 const stringHeaders = ["year", "gender", "category", "count"];
 const timeHeaders = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
 
+const HEADER_LUT = {
+    'year': 'Year',
+    'gender': 'Gender',
+    'category': 'Age Cat',
+    'count': 'Total',
+    'fastest': 'Fastest',
+    'slowest': 'Slowest',
+    'average': 'Average',
+    'q1': '1st Quartile',
+    'q2': '2nd Quartile',
+    'q3': '3rd Quartile',
+    'peak': 'Peak'
+};
+
 function populateTable(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
 
@@ -18,14 +32,14 @@ function populateTable(tableId) {
             const td = document.createElement('td');
             td.textContent = row[header];
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
-            td.setAttribute('data-label', header);
+            td.setAttribute('data-label', HEADER_LUT[header]);
             tr.appendChild(td);
         });
         timeHeaders.forEach(header => {
             const td = document.createElement('td');
             td.textContent = formatSeconds(row[header]);
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
-            td.setAttribute('data-label', header);
+            td.setAttribute('data-label', HEADER_LUT[header]);
             tr.appendChild(td);
         });
 
@@ -160,7 +174,7 @@ function drawSummaryChart(wrapperId, mode) {
                 marker: { color: GENDER_COLORS['other'] }
             };
 
-            layout.title.text = "Mass Finishers by Count"
+            layout.title.text = "Mass Finishers Totals"
             layout.yaxis.ticksuffix = '';
 
             Plotly.newPlot(chartId, [overallTrace].concat(genderCountTraces), layout, figure);
@@ -371,61 +385,4 @@ function createHistogramInstance(wrapperId) {
 
     // Initial run
     updateCats();
-}
-
-function drawSummaryTable() {
-    // 1. Isolate the "All Categories" rows
-    const summaryData = histogramData.filter(row => row.category === 'All Categories');
-
-    // 2. Extract unique sorted years (highest to lowest) and unique genders
-    const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => b - a);
-    const genders = [...new Set(summaryData.map(row => row.gender))].sort();
-
-    // 3. Build the table header dynamically
-    let tableHtml = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Year</th>
-                        <th>Total Finishers</th>
-                        ${genders.map(g => `<th>${g.charAt(0).toUpperCase() + g.slice(1)}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-    // 4. Populate table rows for each year
-    years.forEach(year => {
-        // Calculate overall total for this year
-        const yearTotal = summaryData
-            .filter(row => row.year === year)
-            .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
-
-        tableHtml += `
-                <tr>
-                    <td><strong>${year}</strong></td>
-                    <td><strong>${yearTotal.toLocaleString()}</strong></td>
-            `;
-
-        // Calculate total for each individual gender column
-        genders.forEach(gender => {
-            const genderTotal = summaryData
-                .filter(row => row.year === year && row.gender === gender)
-                .reduce((sum, row) => sum + Math.sumPrecise(row.bin_counts), 0);
-
-            const asPercentStr = (100 * genderTotal / yearTotal).toFixed(1).toLocaleString();
-
-            tableHtml += `<td>${genderTotal.toLocaleString()} (${asPercentStr}%)</td>`;
-        });
-
-        tableHtml += `</tr>`;
-    });
-
-    tableHtml += `
-                </tbody>
-            </table>
-        `;
-
-    // 5. Inject the completed table HTML into our placeholder container
-    document.getElementById('tableContainer').innerHTML = tableHtml;
 }
