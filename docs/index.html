@@ -29,7 +29,7 @@
             color: #333;
             max-width: 1400px;
             margin: auto;
-            padding: 20px;
+            padding: 10px;
             background-color: #f9f9f9;
         }
 
@@ -54,7 +54,7 @@
 
         th,
         td {
-            padding: 10px 12px;
+            padding: 8px 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
@@ -247,7 +247,7 @@
             Javascript is disabled. This page doesn't work without javascript enabled. 
         </p>
         <p class="noscript-message">
-            Please enable javascript to view the plots and tables.
+            Please enable javascript to access the plots and tables.
         </p>
     </noscript>
     <div class="dashboard">
@@ -255,6 +255,12 @@
         <p>
             This page presents an analysis of the finishing times of the London Marathon Mass Participation runners.
         </p>
+        <p>Comments:</p>
+        <ul>
+            <li>2018: Hottest London marathon recorded so far (24.2°C)</li>
+            <li>2020: No London mass participation event due to covid. Results are from the virtual marathon where registered runners
+                completed their own route and uploaded their time via the official app.</li>
+        </ul>
         <h2>Overall</h2>
         <div class="plots-grid">
             <div id="summary-count" class="plot-instance"></div>
@@ -287,6 +293,7 @@
                     <th>Year</th>
                     <th>Gender</th>
                     <th>Age Cat</th>
+                    <th>Count</th>
                     <th>Fastest</th>
                     <th>Slowest</th>
                     <th>Average</th>

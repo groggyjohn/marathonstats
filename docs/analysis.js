@@ -5,7 +5,7 @@ const GENDER_COLORS = {
     'other': '#7f7f7f'       // Gray (for any fallback)
 };
 const exactOrder = ['male', 'female', 'non-binary'];
-const stringHeaders = ["year", "gender", "category"];
+const stringHeaders = ["year", "gender", "category", "count"];
 const timeHeaders = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
 
 function populateTable(tableId) {
