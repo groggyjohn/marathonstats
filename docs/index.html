@@ -253,7 +253,7 @@
     <div class="dashboard">
         <h2>Outline</h2>
         <p>
-            This poject presents an analysis of the finishing times of the London Marathon Mass Participation runners.
+            This project presents an analysis of the finishing times of the London Marathon Mass Participation runners.
         </p>
         <p>Comments:</p>
         <ul>
@@ -297,17 +297,16 @@
 
         // Wait for the page to load, then initialize using the 'histogramData' from data.js
         window.onload = function () {
-            // Draw the new summary widgets first
-            //drawSummaryTable(); // Injects the text table
             drawSummaryChart('summary-count', 'count');
             drawSummaryChart('summary-percent', 'percent');
 
             createHistogramInstance('plot-area-1');
             createHistogramInstance('plot-area-2');
+
+            populateTable('metricsTable');
+            applyRowspan('metricsTable');
         };
 
-        populateTable('metricsTable');
-        applyRowspan('metricsTable');
 
     </script>
 
