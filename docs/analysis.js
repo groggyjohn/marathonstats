@@ -5,10 +5,24 @@ const GENDER_COLORS = {
     'other': '#7f7f7f'       // Gray (for any fallback)
 };
 const exactOrder = ['male', 'female', 'non-binary'];
-const stringHeaders = ["year", "gender", "category", "count"];
-const timeHeaders = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
+const stringData = ["year", "gender", "category", "count"];
+const timeData = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
 
-const HEADER_LUT = {
+
+const HEADER_LUT_ORDER = [
+    'year',
+    'gender',
+    'category',
+    'count', 
+    'fastest',
+    'slowest',
+    'average',
+    'q1', 
+    'q2',
+    'q3',
+    'peak', 
+];
+const HEADER_TXT = {
     'year': 'Year',
     'gender': 'Gender',
     'category': 'Age Cat',
@@ -16,30 +30,43 @@ const HEADER_LUT = {
     'fastest': 'Fastest',
     'slowest': 'Slowest',
     'average': 'Average',
-    'q1': '1st Quartile',
-    'q2': '2nd Quartile',
-    'q3': '3rd Quartile',
+    'q1': 'Top 25%',
+    'q2': 'Top 50%',
+    'q3': 'Top 75%',
     'peak': 'Peak'
 };
 
 function populateTable(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
 
+    // Create headings
+    if (true) {
+    const thead = document.querySelector(`#${tableId} thead`);
+    const tr = document.createElement('tr');
+    HEADER_LUT_ORDER.forEach(heading =>{
+            const th = document.createElement('th');
+            th.textContent = HEADER_TXT[heading];
+            tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    };
+
+    // Add data content
     histogramData.forEach(row => {
         const tr = document.createElement('tr');
 
-        stringHeaders.forEach(header => {
+        stringData.forEach(item => {
             const td = document.createElement('td');
-            td.textContent = row[header];
+            td.textContent = row[item];
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
-            td.setAttribute('data-label', HEADER_LUT[header]);
+            td.setAttribute('data-label', HEADER_TXT[item]);
             tr.appendChild(td);
         });
-        timeHeaders.forEach(header => {
+        timeData.forEach(item => {
             const td = document.createElement('td');
-            td.textContent = formatSeconds(row[header]);
+            td.textContent = formatSeconds(row[item]);
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
-            td.setAttribute('data-label', HEADER_LUT[header]);
+            td.setAttribute('data-label', HEADER_TXT[item]);
             tr.appendChild(td);
         });
 
@@ -301,7 +328,6 @@ function createHistogramInstance(wrapperId) {
                 name: gender,
                 type: 'bar',
                 legendrank: rank,
-                offset: 0,
                 //width: mode === 'overlay' ? 151000 : 150000,
 
                 // 3. Attach our custom text array and override Plotly's default tooltips
@@ -320,15 +346,18 @@ function createHistogramInstance(wrapperId) {
 
         const catTitleText = cat === 'all' ? 'All Categories' : `Category: ${cat}`;
         const layout = {
-            height: 380,
+            height: 400,
             title: {
-                text: `Mass Finish Distribution for ${year}<br><span style="font-size:14px;color:#666;">${catTitleText} (2.5 min bins)</span>`,
+                font: {
+                    size:14,
+                },
+                text: `Mass Finish Distribution for ${year}<br><span style="font-size:12px;color:#666;">${catTitleText} (2.5 min bins)</span>`,
             },
             barmode: mode,
             hovermode: 'x',
             xaxis: {
-                title: { text: 'Finish Time (HH:MM:SS)' },
-                nticks: 10,
+                nticks: 6,
+                tickangle: 45,
                 range: [0, (8 - 2) * 60 / 2.5],
                 autorange: false,
             },
@@ -340,7 +369,7 @@ function createHistogramInstance(wrapperId) {
                     include: 5, // 5 value means we dont get fractional finishers
                 }
             },
-            margin: { t: 75, l: 50, r: 50, b: 50 },
+            margin: { t: 30, l: 50, r: 50, b: 50 },
             legend: {
                 traceorder: 'normal',
                 orientation: 'v',
