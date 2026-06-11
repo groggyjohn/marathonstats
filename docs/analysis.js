@@ -13,14 +13,14 @@ const HEADER_LUT_ORDER = [
     'year',
     'gender',
     'category',
-    'count', 
+    'count',
     'fastest',
     'slowest',
     'average',
-    'q1', 
+    'q1',
     'q2',
     'q3',
-    'peak', 
+    'peak',
 ];
 const HEADER_TXT = {
     'year': 'Year',
@@ -41,14 +41,14 @@ function populateTable(tableId) {
 
     // Create headings
     if (true) {
-    const thead = document.querySelector(`#${tableId} thead`);
-    const tr = document.createElement('tr');
-    HEADER_LUT_ORDER.forEach(heading =>{
+        const thead = document.querySelector(`#${tableId} thead`);
+        const tr = document.createElement('tr');
+        HEADER_LUT_ORDER.forEach(heading => {
             const th = document.createElement('th');
             th.textContent = HEADER_TXT[heading];
             tr.appendChild(th);
-    });
-    thead.appendChild(tr);
+        });
+        thead.appendChild(tr);
     };
 
     // Add data content
@@ -153,7 +153,6 @@ function drawSummaryChart(wrapperId, mode) {
     const figure = {
         displaylogo: false,
         displayModeBar: false,
-        //modeBarButtonsToRemove: ['toImage', 'pan', 'select', 'zoom', 'autoScale', 'lasso'],
         responsive: true,
     }
 
@@ -292,14 +291,6 @@ function createHistogramInstance(wrapperId) {
             const xRaw = record ? record.bin_start_times : [];
             const yCounts = record ? record.bin_counts : [];
 
-            // Helper function to turn raw seconds into a padded HH:MM:SS string
-            const formatSeconds = (totalSeconds) => {
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
-                return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            };
-
             // 1. Generate the X timestamps for positioning the bars
             const xHms = xRaw.map(s => {
                 return formatSeconds(Math.floor(s));
@@ -349,9 +340,9 @@ function createHistogramInstance(wrapperId) {
             height: 400,
             title: {
                 font: {
-                    size:14,
+                    size: 14,
                 },
-                text: `Mass Finish Distribution for ${year}<br><span style="font-size:12px;color:#666;">${catTitleText} (2.5 min bins)</span>`,
+                text: `Mass Finish Distribution for ${year}<br><span style="font-size:12px;color:#666;">${catTitleText}</span>`,
             },
             barmode: mode,
             hovermode: 'x',
@@ -362,7 +353,7 @@ function createHistogramInstance(wrapperId) {
                 autorange: false,
             },
             yaxis: {
-                title: { text: 'Number of Finishers' },
+                title: { text: 'Number of Finishers per 2.5 mins' },
                 fixedrange: true,
                 tickformat: ',d',
                 autorangeoptions: {
@@ -414,4 +405,164 @@ function createHistogramInstance(wrapperId) {
 
     // Initial run
     updateCats();
+}
+
+function createFinisherPercentageInstance(wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+
+    // 1. Create unique IDs for this instance's elements
+    const yearId = `${wrapperId}-year`;
+    const catId = `${wrapperId}-cat`;
+    const genderId = `${wrapperId}-gender`;
+    const chartId = `${wrapperId}-chart`;
+
+    // 2. Inject the HTML structure
+    wrapper.innerHTML = `
+        <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <select id="${yearId}"></select>
+            <select id="${catId}"></select>
+            <select id="${genderId}"></select>
+        </div>
+        <div id="${chartId}" style="width: 100%"></div>
+    `;
+
+    // 3. The main drawing function
+    const render = () => {
+        const year = parseInt(document.getElementById(yearId).value);
+        const category = document.getElementById(catId).value;
+        const gender = document.getElementById(genderId).value;
+
+        // Filter for the specific year and category
+        let records = histogramData.filter(r => r.year === year && r.category === category);
+
+        // If a specific gender is chosen, filter down to just that record
+        if (gender !== 'all') {
+            records = records.filter(r => r.gender.toLowerCase() === gender.toLowerCase());
+        }
+
+        // Aggregate counts by time (Crucial for the "All Genders" option)
+        let timeMap = {};
+        records.forEach(rec => {
+            rec.bin_start_times.forEach((timeStr, index) => {
+                timeMap[timeStr] = (timeMap[timeStr] || 0) + rec.bin_counts[index];
+            });
+        });
+
+        // Sort the timestamps chronologically
+        const sortedTimes = Object.keys(timeMap).map(Number).sort((a, b) => a - b);
+        const counts = sortedTimes.map(t => timeMap[t]);
+
+        // Calculate the cumulative percentage
+        let runningTotal = 0;
+        const totalFinishers = counts.reduce((sum, count) => sum + count, 0);
+
+        let cumulativePercentages = [];
+        counts.forEach(count => {
+            runningTotal += count;
+            cumulativePercentages.push((runningTotal / totalFinishers) * 100);
+        });
+
+        const xHms = sortedTimes.map(s => {
+            return formatSeconds(Math.floor(s));
+        });
+
+
+        // Define the line plot trace
+        const trace = {
+            x: xHms,
+            y: cumulativePercentages,
+            type: 'scatter',
+            mode: 'lines',
+            name: '% Finished',
+            line: {
+                color: '#2ca02c', // A nice distinct green for the line
+                width: 3,
+                shape: 'spline' // Smooths the curve slightly between data points
+            },
+            fill: 'tozeroy', // Fills the area under the curve
+            fillcolor: 'rgba(44, 160, 44, 0.1)',
+        };
+
+        const layout = {
+            title: {
+                text: `Percentage Finished by Time (${year})<br><span style="font-size:12px;color:#666;">${category} | ${gender === 'all' ? 'All Genders' : gender.charAt(0).toUpperCase() + gender.slice(1)}</span>`,
+            },
+            height: 400,
+            margin: { t: 30, b: 50, l: 50, r: 50 },
+            hovermode: 'x',
+            xaxis: {
+                nticks: 6,
+                tickangle: 45,
+                range: [0, (8 - 2) * 60 / 2.5],
+                fixedrange : true,
+            },
+            yaxis: {
+                //title: { text: 'Percentage Finished'},
+                range: [0, 105], // Maxed slightly over 100 so the top of the line isn't cut off
+                fixedrange : true,
+                ticksuffix: '%'
+            },
+            //dragmode: false
+        };
+        
+        const figure = {
+            displayModeBar: false,
+            responsive: true,
+            scrollZoom: false,
+            doubleClick: 'reset',
+        };
+
+        Plotly.newPlot(chartId, [trace], layout, figure);
+    };
+
+    // 4. Initialization & Cascading Dropdowns
+    const yearEl = document.getElementById(yearId);
+    const catEl = document.getElementById(catId);
+    const genderEl = document.getElementById(genderId);
+
+    // Populate Years
+    const years = [...new Set(histogramData.map(r => r.year))].sort((a, b) => b - a);
+    years.forEach(y => yearEl.add(new Option(y, y)));
+
+    // Update Categories when Year changes
+    const updateCategories = () => {
+        catEl.innerHTML = '';
+        const currentYear = parseInt(yearEl.value);
+        let cats = [...new Set(histogramData.filter(r => r.year === currentYear).map(r => r.category))];
+
+        // Ensure 'All Categories' is always at the top
+        cats = cats.filter(c => c !== 'All Categories').sort();
+        ['All Categories', ...cats].forEach(c => catEl.add(new Option(c, c)));
+
+        updateGenders(); // Cascade down
+    };
+
+    // Update Genders when Category changes
+    const updateGenders = () => {
+        genderEl.innerHTML = '';
+        const currentYear = parseInt(yearEl.value);
+        const currentCat = catEl.value;
+
+        const genders = [...new Set(histogramData
+            .filter(r => r.year === currentYear && r.category === currentCat)
+            .map(r => r.gender)
+        )].sort();
+
+        // Add 'All' first, then specific genders
+        genderEl.add(new Option('All Genders', 'all'));
+        genders.forEach(g => {
+            const label = g.charAt(0).toUpperCase() + g.slice(1);
+            genderEl.add(new Option(label, g));
+        });
+
+        render(); // Finally, draw the chart
+    };
+
+    // 5. Attach Event Listeners
+    yearEl.addEventListener('change', updateCategories);
+    catEl.addEventListener('change', updateGenders);
+    genderEl.addEventListener('change', render);
+
+    // 6. Kick off the first render
+    updateCategories();
 }

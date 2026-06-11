@@ -244,7 +244,7 @@
             }
         </style>
         <p class="noscript-message">
-            Javascript is disabled. This page doesn't work without javascript enabled. 
+            Javascript is disabled. This page doesn't work without javascript enabled.
         </p>
         <p class="noscript-message">
             Please enable javascript to access the plots and tables.
@@ -253,19 +253,30 @@
     <div class="dashboard">
         <h2>Outline</h2>
         <p>
-            This project presents an analysis of the finishing times of the London Marathon Mass Participation runners.
+
+            This project presents various views of mass participation finishing times from runners of the London
+            Marathon.
         </p>
-        <p>Comments:</p>
+        <p>
+            This page has interactive plots, and the interactions works best with a computer which has a mouse or trackpad. 
+            The plots work on mobile devices, but some things work differently (eg pinch-to-zoom is not supported - zoom needs to be done through
+            '+' and '-' icons found on plots, where available)
+        </p>
+        <p>Data comments:</p>
         <ul>
             <li>2018: Hottest London marathon recorded so far (24.2°C)</li>
-            <li>2020: No London mass participation event due to covid. Results are from the virtual marathon where registered runners
+            <li>2020: No London mass participation event due to covid. Results are from the virtual marathon where
+                registered runners
                 completed their own route and uploaded their time via the official app.</li>
         </ul>
-        <h2>Overall</h2>
+        <h2>Overall Totals</h2>
         <div class="plots-grid">
             <div id="summary-count" class="plot-instance"></div>
             <div id="summary-percent" class="plot-instance"></div>
         </div>
+
+        <h2>Finisher Rates</h2>
+        <div id="percentage-plot-1" class="plot-instance" style="margin-top:10px"></div>
 
         <h2>Comparative Analysis</h2>
         <p style="color: #666;">Use the filters below to compare different years or categories side-by-side.</p>
@@ -299,6 +310,7 @@
         window.onload = function () {
             drawSummaryChart('summary-count', 'count');
             drawSummaryChart('summary-percent', 'percent');
+            createFinisherPercentageInstance('percentage-plot-1');
 
             createHistogramInstance('plot-area-1');
             createHistogramInstance('plot-area-2');
