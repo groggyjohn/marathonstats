@@ -143,7 +143,7 @@ function drawSummaryChart(wrapperId, mode) {
         // const gender = row.gender;
         const { year, gender } = row;
 
-        acc.byYear[year] = (acc.byYear[year] || 0) + Math.sumPrecise(row.bin_counts);
+        acc.byYear[year] = (acc.byYear[year] || null) + Math.sumPrecise(row.bin_counts);
         if (!acc.byYearGender[year]) acc.byYearGender[year] = {};
         acc.byYearGender[year][gender] = (acc.byYearGender[year][gender] || 0) + Math.sumPrecise(row.bin_counts);
         return acc;
@@ -162,7 +162,7 @@ function drawSummaryChart(wrapperId, mode) {
         // Gender traces (counts)
         const genderCountTraces = genders.map(gender => ({
             x: years.map(y => String(y)),
-            y: years.map(year => totals.byYearGender[year]?.[gender] || 0),
+            y: years.map(year => totals.byYearGender[year]?.[gender] || null),
             name: gender,
             type: 'lines+markers',
             marker: { color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other'] }
@@ -465,6 +465,18 @@ function createFinisherPercentageInstance(wrapperId) {
         const xHms = sortedTimes.map(s => {
             return formatSeconds(Math.floor(s));
         });
+        const hoverLabels = sortedTimes.map((s, index) => {
+            const startSecs = s;
+            // The bin ends 2.5 minutes (150 seconds) later.
+            // We subtract 1 second so it reads cleanly as 02:59:59 instead of 03:00:00
+            const endSecs = startSecs + 150 - 1;
+
+            const startTimeStr = formatSeconds(startSecs);
+            const endTimeStr = formatSeconds(endSecs);
+
+            // Return the precise format: (02:57:30 - 02:59:59, 234)
+            return `(${cumulativePercentages[index].toFixed(2)}% of ${totalFinishers}`;
+        });
 
 
         // Define the line plot trace
@@ -474,6 +486,8 @@ function createFinisherPercentageInstance(wrapperId) {
             type: 'scatter',
             mode: 'lines',
             name: '% Finished',
+            text: hoverLabels,
+            hovertemplate: '%{text}<extra></extra>',
             line: {
                 color: '#2ca02c', // A nice distinct green for the line
                 width: 3,
@@ -494,17 +508,17 @@ function createFinisherPercentageInstance(wrapperId) {
                 nticks: 6,
                 tickangle: 45,
                 range: [0, (8 - 2) * 60 / 2.5],
-                fixedrange : true,
+                fixedrange: true,
             },
             yaxis: {
                 //title: { text: 'Percentage Finished'},
                 range: [0, 105], // Maxed slightly over 100 so the top of the line isn't cut off
-                fixedrange : true,
+                fixedrange: true,
                 ticksuffix: '%'
             },
             //dragmode: false
         };
-        
+
         const figure = {
             displayModeBar: false,
             responsive: true,
