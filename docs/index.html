@@ -307,12 +307,12 @@
 
         // Wait for the page to load, then initialize using the 'histogramData' from data.js
         window.onload = function () {
-            drawSummaryChart('summary-count', 'count');
-            drawSummaryChart('summary-percent', 'percent');
-            createFinisherPercentageInstance('percentage-plot-1');
+            createYearlyTotalsPlot('summary-count', 'count');
+            createYearlyTotalsPlot('summary-percent', 'percent');
+            createFinisherPercentagePlot('percentage-plot-1');
 
-            createHistogramInstance('plot-area-1');
-            createHistogramInstance('plot-area-2');
+            createHistogramPlot('plot-area-1');
+            createHistogramPlot('plot-area-2');
 
             populateTable('metricsTable');
             applyRowspan('metricsTable');

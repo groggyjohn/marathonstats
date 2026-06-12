@@ -120,7 +120,7 @@ function formatSeconds(totalSeconds) {
     return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-function drawSummaryChart(wrapperId, mode) {
+function createYearlyTotalsPlot(wrapperId, mode) {
     const wrapper = document.getElementById(wrapperId);
     const modeName = `${wrapperId}-mode`;
     const chartId = `${wrapperId}-chart`;
@@ -209,11 +209,17 @@ function drawSummaryChart(wrapperId, mode) {
             const genderPercentTraces = genders.map(gender => {
                 const percentArray = years.map(year => {
                     const yearTotal = totals.byYear[year] || 0;
-                    if (!yearTotal) return 0;
-                    return (totals.byYearGender[year]?.[gender] || 0) / yearTotal * 100;
+                    if (totals.byYearGender[year]?.[gender] === undefined) {
+                        return null;
+                    }
+                    return (totals.byYearGender[year][gender]) / yearTotal * 100;
                 });
 
-                const hoverText = percentArray.map(p => `${p.toFixed(1)}%`);
+                const hoverText = percentArray.map(p => {
+                    if (p) {
+                        return `${p.toFixed(1)}%`
+                    };
+                });
 
                 return {
                     x: years.map(y => String(y)),
@@ -238,7 +244,7 @@ function drawSummaryChart(wrapperId, mode) {
     render();
 }
 
-function createHistogramInstance(wrapperId) {
+function createHistogramPlot(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
 
     // 1. Create unique IDs for this specific instance
@@ -268,7 +274,6 @@ function createHistogramInstance(wrapperId) {
 
         const filtered = histogramData.filter(row => row.year == year && row.category === cat);
 
-        // ... (Insert your existing gender sorting, color mapping, and trace logic here) ...
         // 2. Get the unique genders actually present in the currently selected data
         const availableGenders = [...new Set(filtered.map(row => row.gender))];
 
@@ -407,7 +412,7 @@ function createHistogramInstance(wrapperId) {
     updateCats();
 }
 
-function createFinisherPercentageInstance(wrapperId) {
+function createFinisherPercentagePlot(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
 
     // 1. Create unique IDs for this instance's elements
@@ -465,6 +470,7 @@ function createFinisherPercentageInstance(wrapperId) {
         const xHms = sortedTimes.map(s => {
             return formatSeconds(Math.floor(s));
         });
+
         const hoverLabels = sortedTimes.map((s, index) => {
             const startSecs = s;
             // The bin ends 2.5 minutes (150 seconds) later.
