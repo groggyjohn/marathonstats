@@ -36,8 +36,35 @@ const HEADER_TXT = {
     'peak': 'Peak'
 };
 
-function populateTable(tableId) {
+function secondsToHms(totalSeconds) {
+    if (totalSeconds === 0) {
+        return '-';
+    }
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    //return "100";
+    return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+function populateTable(tableId, filteredHistogramData) {
     const tbody = document.querySelector(`#${tableId} tbody`);
+
+
+    const gender = document.getElementById("select-table-gender").value;
+    const cat = document.getElementById("select-table-cat").value;
+    var f1;
+    var f2;
+    if (gender != 'off') {
+        f1 = histogramData.filter(row => row.gender == gender);
+    } else {
+        f1 = histogramData;
+    };
+    if (cat != 'off') {
+        f2 = f1.filter(row => row.category == cat);
+    } else {
+        f2 = f1;
+    };
 
     // Create headings
     if (true) {
@@ -52,7 +79,7 @@ function populateTable(tableId) {
     };
 
     // Add data content
-    histogramData.forEach(row => {
+    f2.forEach(row => {
         const tr = document.createElement('tr');
 
         stringData.forEach(item => {
@@ -64,7 +91,7 @@ function populateTable(tableId) {
         });
         timeData.forEach(item => {
             const td = document.createElement('td');
-            td.textContent = formatSeconds(row[item]);
+            td.textContent = secondsToHms(row[item]);
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
             td.setAttribute('data-label', HEADER_TXT[item]);
             tr.appendChild(td);
@@ -73,52 +100,6 @@ function populateTable(tableId) {
         tbody.appendChild(tr);
     });
 }
-
-function applyRowspan(tableId) {
-    const table = document.getElementById(tableId);
-    // Grab all rows inside the table body
-    const rows = table.querySelectorAll('tbody tr');
-
-    let previousYearCell = null;
-    let previousGenderCell = null;
-    let rowspanCount = 1;
-
-    for (let i = 0; i < rows.length; i++) {
-        // Get the specific cell in the target column
-        const yearCell = rows[i].cells[0]
-        const genderCell = rows[i].cells[1];
-        yearCell.classList.add('group-cell');
-        genderCell.classList.add('group-cell');
-
-        // If this cell's text matches the cell directly above it
-        if (previousGenderCell && genderCell.textContent === previousGenderCell.textContent) {
-            rowspanCount++;
-            // Apply the rowspan to the topmost matching cell
-            previousYearCell.setAttribute('rowspan', rowspanCount);
-            previousGenderCell.setAttribute('rowspan', rowspanCount);
-            // Hide this duplicate cell on PC, but keep it in the DOM for mobile
-            yearCell.classList.add('hide-on-pc');
-            genderCell.classList.add('hide-on-pc');
-        } else {
-            // The value changed (e.g., from 2023 to 2024), reset tracking
-            previousYearCell = yearCell;
-            previousGenderCell = genderCell;
-            rowspanCount = 1;
-            rows[i]
-        }
-    }
-}
-
-function formatSeconds(totalSeconds) {
-    if (totalSeconds === 0) {
-        return '-';
-    }
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-    //return "100";
-    return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-};
 
 function createYearlyTotalsPlot(wrapperId, mode) {
     const wrapper = document.getElementById(wrapperId);
@@ -298,7 +279,7 @@ function createHistogramPlot(wrapperId) {
 
             // 1. Generate the X timestamps for positioning the bars
             const xHms = xRaw.map(s => {
-                return formatSeconds(Math.floor(s));
+                return secondsToHms(Math.floor(s));
             })
 
             // 2. Generate custom hover labels for every single bin entry
@@ -308,8 +289,8 @@ function createHistogramPlot(wrapperId) {
                 // We subtract 1 second so it reads cleanly as 02:59:59 instead of 03:00:00
                 const endSecs = startSecs + 150 - 1;
 
-                const startTimeStr = formatSeconds(startSecs);
-                const endTimeStr = formatSeconds(endSecs);
+                const startTimeStr = secondsToHms(startSecs);
+                const endTimeStr = secondsToHms(endSecs);
 
                 // Return the precise format: (02:57:30 - 02:59:59, 234)
                 return `(${startTimeStr} - ${endTimeStr}), ${yCounts[index]}`;
@@ -391,10 +372,10 @@ function createHistogramPlot(wrapperId) {
     // 4. Initialize Dropdowns for THIS instance
     const years = [...new Set(histogramData.map(r => r.year))].sort((a, b) => b - a);
     const yearEl = document.getElementById(yearId);
+    const catEl = document.getElementById(catId);
     years.forEach(y => yearEl.add(new Option(y, y)));
 
     const updateCats = () => {
-        const catEl = document.getElementById(catId);
         catEl.innerHTML = '';
         // Add "All Categories" first, then the rest sorted
         const cats = [...new Set(histogramData.filter(r => r.year == yearEl.value).map(r => r.category))]
@@ -406,7 +387,7 @@ function createHistogramPlot(wrapperId) {
 
     // 5. Attach Listeners
     yearEl.addEventListener('change', updateCats);
-    document.getElementById(catId).addEventListener('change', render);
+    catEl.addEventListener('change', render);
     wrapper.querySelectorAll(`input[name="${modeName}"]`).forEach(r => r.addEventListener('change', render));
 
     // Initial run
@@ -469,7 +450,7 @@ function createFinisherPercentagePlot(wrapperId) {
         });
 
         const xHms = sortedTimes.map(s => {
-            return formatSeconds(Math.floor(s));
+            return secondsToHms(Math.floor(s));
         });
 
         const hoverLabels = sortedTimes.map((s, index) => {
@@ -478,8 +459,8 @@ function createFinisherPercentagePlot(wrapperId) {
             // We subtract 1 second so it reads cleanly as 02:59:59 instead of 03:00:00
             const endSecs = startSecs + 150 - 1;
 
-            const startTimeStr = formatSeconds(startSecs);
-            const endTimeStr = formatSeconds(endSecs);
+            const startTimeStr = secondsToHms(startSecs);
+            const endTimeStr = secondsToHms(endSecs);
 
             // Return the precise format: (02:57:30 - 02:59:59, 234)
             return `(${cumulativePercentages[index].toFixed(2)}% of ${totalFinishers}`;
