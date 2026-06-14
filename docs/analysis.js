@@ -347,7 +347,7 @@ function createHistogramPlot(wrapperId) {
                 font: {
                     size: 14,
                 },
-                text: `Mass Finish Distribution for ${year}<br><span style="font-size:12px;color:#666;">${catTitleText}</span>`,
+                text: `${year} Mass Finish Distribution<br><span style="font-size:12px;color:#666;">${catTitleText}</span>`,
             },
             barmode: mode,
             hovermode: 'x',
@@ -376,10 +376,11 @@ function createHistogramPlot(wrapperId) {
         };
 
         const figure = {
+            displayModeBar: true,
             displaylogo: false,
             modeBarButtonsToRemove: ['toImage', 'pan', 'select', 'zoom', 'autoScale', 'lasso'],
             responsive: true,
-            scrollZoom: true,
+            scrollZoom: false,
             doubleClick: 'reset',
         }
 
