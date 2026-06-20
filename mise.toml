@@ -1,0 +1,11 @@
+[env]
+_.source = "distro_envs.sh"
+
+[tools]
+uv = "latest"
+ruff = "latest"
+deno = "latest"
+
+[settings]
+python.uv_venv_auto = true
+
