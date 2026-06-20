@@ -1,3 +1,5 @@
+import { histogramData } from './data.js';
+
 const GENDER_COLORS = {
     'male': '#00bfff',
     'female': 'orange',
@@ -47,7 +49,53 @@ function secondsToHms(totalSeconds) {
     return `${String(hours).padStart(1, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 };
 
-function populateTable(tableId, filteredHistogramData) {
+
+export function populateTableMain(wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+
+    // Inject the HTML controls for this instance
+    wrapper.innerHTML = `
+        <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <div>
+                <label for="select-table-gender">Gender Filter</label>
+                <select id="select-table-gender"></select>
+            </div>
+
+            <div>
+                <label for="select-table-cat">Age Category Filter</label>
+                <select id="select-table-cat"></select>
+            </div>
+        </div>
+        <div>
+            <table id="metricsTable">
+                <thead>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    `;
+    const genderElement = document.getElementById('select-table-gender');
+    const genders = [...new Set(histogramData.map(r => r.gender))].sort();
+    ['off', ...genders].forEach(c => genderElement.add(new Option(c, c)));
+
+    const catElement = document.getElementById('select-table-cat');
+    const cats = [...new Set(histogramData.map(r => r.category))]
+        .filter(c => c !== 'All Categories').sort();
+    ['off', 'All Categories', ...cats].forEach(c => catElement.add(new Option(c, c)));
+
+    const updateTable = () => {
+        $("#metricsTable tr").remove();
+        populateTable('metricsTable');
+    };
+
+    genderElement.addEventListener('change', updateTable);
+    catElement.addEventListener('change', updateTable);
+
+    populateTable('metricsTable');
+};
+
+function populateTable(tableId) {
     const tbody = document.querySelector(`#${tableId} tbody`);
 
 
@@ -67,16 +115,14 @@ function populateTable(tableId, filteredHistogramData) {
     };
 
     // Create headings
-    if (true) {
-        const thead = document.querySelector(`#${tableId} thead`);
-        const tr = document.createElement('tr');
-        HEADER_LUT_ORDER.forEach(heading => {
-            const th = document.createElement('th');
-            th.textContent = HEADER_TXT[heading];
-            tr.appendChild(th);
-        });
-        thead.appendChild(tr);
-    };
+    const thead = document.querySelector(`#${tableId} thead`);
+    const tr = document.createElement('tr');
+    HEADER_LUT_ORDER.forEach(heading => {
+        const th = document.createElement('th');
+        th.textContent = HEADER_TXT[heading];
+        tr.appendChild(th);
+    });
+    thead.appendChild(tr);
 
     // Add data content
     f2.forEach(row => {
@@ -101,7 +147,7 @@ function populateTable(tableId, filteredHistogramData) {
     });
 }
 
-function createYearlyTotalsPlot(wrapperId, mode) {
+export function createYearlyTotalsPlot(wrapperId, mode) {
     const wrapper = document.getElementById(wrapperId);
     const modeName = `${wrapperId}-mode`;
     const chartId = `${wrapperId}-chart`;
@@ -110,26 +156,19 @@ function createYearlyTotalsPlot(wrapperId, mode) {
         <div id="${chartId}" style="width: 100%"></div>
     `;
 
-    // 1. Get only the "All Categories" rows
+    // Get only the "All Categories" rows
     const summaryData = histogramData.filter(row => row.category === 'All Categories');
 
-    // 2. Get unique years and sort them HIGHEST to LOWEST
+    // Get unique years and sort them HIGHEST to LOWEST
     const years = [...new Set(summaryData.map(row => row.year))].sort((a, b) => a - b);
     const genders = [...new Set(summaryData.map(row => row.gender))];
 
-    // Compute all totals in a single pass: by year and by year+gender
-    const totals = summaryData.reduce((acc, row) => {
-        // same as
-        // const year = row.year;
-        // const gender = row.gender;
+    const totalsByYearGender = {};
+    summaryData.forEach(row => {
         const { year, gender } = row;
-
-        acc.byYear[year] = (acc.byYear[year] || null) + Math.sumPrecise(row.bin_counts);
-        if (!acc.byYearGender[year]) acc.byYearGender[year] = {};
-        acc.byYearGender[year][gender] = (acc.byYearGender[year][gender] || 0) + Math.sumPrecise(row.bin_counts);
-        return acc;
-    }, { byYear: {}, byYearGender: {} });
-
+        if (!totalsByYearGender[year]) totalsByYearGender[year] = {};
+        totalsByYearGender[year][gender] = row.count;
+    });
 
     const figure = {
         displaylogo: false,
@@ -141,9 +180,9 @@ function createYearlyTotalsPlot(wrapperId, mode) {
     const render = () => {
 
         // Gender traces (counts)
-        const genderCountTraces = genders.map(gender => ({
+        const genderCountTraces = genders.sort().map(gender => ({
             x: years.map(y => String(y)),
-            y: years.map(year => totals.byYearGender[year]?.[gender] || null),
+            y: years.map(year => totalsByYearGender[year]?.[gender] || null),
             name: gender,
             type: 'lines+markers',
             marker: { color: GENDER_COLORS[gender.toLowerCase()] || GENDER_COLORS['other'] }
@@ -173,27 +212,18 @@ function createYearlyTotalsPlot(wrapperId, mode) {
 
         if (mode === 'count') {
             // Show overall + gender counts
-            const overallTrace = {
-                x: years.map(y => String(y)),
-                y: years.map(year => totals.byYear[year] || 0),
-                name: 'all',
-                type: 'lines+markers',
-                marker: { color: GENDER_COLORS['other'] }
-            };
-
             layout.title.text = "Mass Finishers Totals"
             layout.yaxis.ticksuffix = '';
-
-            Plotly.newPlot(chartId, [overallTrace].concat(genderCountTraces), layout, figure);
+            Plotly.newPlot(chartId, genderCountTraces, layout, figure);
         } else {
             // Percent mode: compute percent per year for each gender and omit 'all' trace
-            const genderPercentTraces = genders.map(gender => {
+            const genderPercentTraces = genders.filter(gender => gender != "All Genders").map(gender => {
                 const percentArray = years.map(year => {
-                    const yearTotal = totals.byYear[year] || 0;
-                    if (totals.byYearGender[year]?.[gender] === undefined) {
+                    const yearTotal = totalsByYearGender[year]['All Genders'] || 0;
+                    if (totalsByYearGender[year]?.[gender] === undefined) {
                         return null;
                     }
-                    return (totals.byYearGender[year][gender]) / yearTotal * 100;
+                    return (totalsByYearGender[year][gender]) / yearTotal * 100;
                 });
 
                 const hoverText = percentArray.map(p => {
@@ -225,7 +255,7 @@ function createYearlyTotalsPlot(wrapperId, mode) {
     render();
 }
 
-function createHistogramPlot(wrapperId) {
+export function createHistogramPlot(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
 
     // 1. Create unique IDs for this specific instance
@@ -394,7 +424,7 @@ function createHistogramPlot(wrapperId) {
     updateCats();
 }
 
-function createFinisherPercentagePlot(wrapperId) {
+export function createFinisherPercentagePlot(wrapperId) {
     const wrapper = document.getElementById(wrapperId);
 
     // 1. Create unique IDs for this instance's elements
@@ -423,7 +453,7 @@ function createFinisherPercentagePlot(wrapperId) {
         let records = histogramData.filter(r => r.year === year && r.category === category);
 
         // If a specific gender is chosen, filter down to just that record
-        if (gender !== 'all') {
+        if (gender !== 'All Genders') {
             records = records.filter(r => r.gender.toLowerCase() === gender.toLowerCase());
         }
 
@@ -463,7 +493,7 @@ function createFinisherPercentagePlot(wrapperId) {
             const endTimeStr = secondsToHms(endSecs);
 
             // Return the precise format: (02:57:30 - 02:59:59, 234)
-            return `(${cumulativePercentages[index].toFixed(2)}% of ${totalFinishers}`;
+            return `${cumulativePercentages[index].toFixed(2)}% of ${totalFinishers}`;
         });
 
 
@@ -527,6 +557,11 @@ function createFinisherPercentagePlot(wrapperId) {
     years.forEach(y => yearEl.add(new Option(y, y)));
 
     // Update Categories when Year changes
+    const updateOnYearChange = () => {
+        updateCategories();
+        updateGenders();
+        render();
+    }
     const updateCategories = () => {
         catEl.innerHTML = '';
         const currentYear = parseInt(yearEl.value);
@@ -535,8 +570,6 @@ function createFinisherPercentagePlot(wrapperId) {
         // Ensure 'All Categories' is always at the top
         cats = cats.filter(c => c !== 'All Categories').sort();
         ['All Categories', ...cats].forEach(c => catEl.add(new Option(c, c)));
-
-        updateGenders(); // Cascade down
     };
 
     // Update Genders when Category changes
@@ -550,21 +583,17 @@ function createFinisherPercentagePlot(wrapperId) {
             .map(r => r.gender)
         )].sort();
 
-        // Add 'All' first, then specific genders
-        genderEl.add(new Option('All Genders', 'all'));
         genders.forEach(g => {
             const label = g.charAt(0).toUpperCase() + g.slice(1);
             genderEl.add(new Option(label, g));
         });
-
-        render(); // Finally, draw the chart
     };
 
     // 5. Attach Event Listeners
-    yearEl.addEventListener('change', updateCategories);
-    catEl.addEventListener('change', updateGenders);
+    yearEl.addEventListener('change', updateOnYearChange);
+    catEl.addEventListener('change', render);
     genderEl.addEventListener('change', render);
 
     // 6. Kick off the first render
-    updateCategories();
+    updateOnYearChange();
 }

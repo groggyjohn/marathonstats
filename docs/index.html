@@ -10,8 +10,6 @@
     <script src="https://cdn.plot.ly/plotly-3.5.1.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js">
     </script>
-    <script src="data.js"></script>
-    <script src="analysis.js"></script>
 
     <style>
         .group-cell {
@@ -263,11 +261,13 @@
             Marathon.
         </p>
         <p>
-            This page has interactive plots, and the interactions works best with a computer which has a mouse or
-            trackpad.
-            The plots work on mobile devices, but some things work differently (eg pinch-to-zoom is not supported - zoom
-            needs to be done through
-            '+' and '-' icons found on plots, where available)
+            This page has interactive plots, and the interactions works best
+            with a computer which has a mouse or trackpad.
+
+            The plots work on mobile devices, but some things work differently.
+
+            On mobile you need to tap the plot to get point details displayed,
+            and zoom needs to be done through '+' and '-' icons found on plots.
         </p>
         <p>Marathon comments:</p>
         <ul>
@@ -286,18 +286,18 @@
         <div id="percentage-plot-1" class="plot-instance" style="margin-top:10px"></div>
 
         <h2>Finish Rates</h2>
-        <p style="color: #666;">Use the filters below to compare different years or categories side-by-side.</p>
+        <p style="color: #666;">Use the filters below to compare different years or age categories side-by-side.</p>
 
         <div class="plots-grid">
             <div id="plot-area-1" class="plot-instance"></div>
             <div id="plot-area-2" class="plot-instance"></div>
         </div>
 
-        <h2>Category Ranges</h2>
+        <h2>Age category Ranges</h2>
         <p>Comments:</p>
         <ul>
-            <li>Categories over age 70+ are inconsistent from 2014 to 2020. From 2021 onwards the 
-                categories are aligned with maximum age cat of 80+.
+            <li>Age categories range classifications for the over 70+ varied from 2014 to 2020. From 2021 onwards the
+                age categories stabilised, with a maximum age cat of 80+.
             </li>
             <li>Top 25/50/75% : Gives percentage of finishers that ran under the listed time.</li>
             <li>Peak : Gives approximate time when most runners in category were finishing.
@@ -305,53 +305,21 @@
             </li>
         </ul>
 
-        <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-            <label for="select-table-gender">Gender Selection</label>
-            <select id="select-table-gender"></select>
+        <div id="category-data"></div>
 
-            <label for="select-table-cat">Category Selection</label>
-            <select id="select-table-cat">Filter</select>
-            <script>
-                const genderElement = document.getElementById('select-table-gender');
-                const genders = [...new Set(histogramData.map(r => r.gender))].sort();
-                ['off', ...genders].forEach(c => genderElement.add(new Option(c, c)));
-
-                const catElement = document.getElementById('select-table-cat');
-                const cats = [...new Set(histogramData.map(r => r.category))]
-                    .filter(c => c !== 'All Categories').sort();
-                ['off', 'All Categories', ...cats].forEach(c => catElement.add(new Option(c, c)));
-
-                const updateTable = () => {
-                    $("#metricsTable tr").remove();
-                    populateTable('metricsTable');
-                };
-
-                genderElement.addEventListener('change', updateTable);
-                catElement.addEventListener('change', updateTable);
-            </script>
-        </div>
-        <div>
-            <table id="metricsTable">
-                <thead>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
     </div>
 
-    <script>
+    <script type="module">
+        import * as stats from "./analysis.js";
 
         // Wait for the page to load, then initialize using the 'histogramData' from data.js
         window.onload = function () {
-            createYearlyTotalsPlot('summary-count', 'count');
-            createYearlyTotalsPlot('summary-percent', 'percent');
-            createFinisherPercentagePlot('percentage-plot-1');
-
-            createHistogramPlot('plot-area-1');
-            createHistogramPlot('plot-area-2');
-
-            populateTable('metricsTable', histogramData);
+            stats.createYearlyTotalsPlot('summary-count', 'count');
+            stats.createYearlyTotalsPlot('summary-percent', 'percent');
+            stats.createFinisherPercentagePlot('percentage-plot-1');
+            stats.createHistogramPlot('plot-area-1');
+            stats.createHistogramPlot('plot-area-2');
+            stats.populateTableMain('category-data');
         };
 
 
