@@ -450,14 +450,19 @@ export function createFinisherPercentagePlot(wrapperId) {
         const gender = document.getElementById(genderId).value;
 
         // Filter for the specific year and category
-        let records = histogramData.filter(r => r.year === year && r.category === category);
+        let records = histogramData.filter(r => r.year === year);
+
+        // If a specific age category is chosen, filter down to just that category across genders
+        if (category !== 'All Categories') {
+            records = records.filter(r => r.category.toLowerCase() === category.toLowerCase());
+        }
 
         // If a specific gender is chosen, filter down to just that record
         if (gender !== 'All Genders') {
             records = records.filter(r => r.gender.toLowerCase() === gender.toLowerCase());
         }
 
-        // Aggregate counts by time (Crucial for the "All Genders" option)
+        // Aggregate counts by time
         let timeMap = {};
         records.forEach(rec => {
             rec.bin_start_times.forEach((timeStr, index) => {
