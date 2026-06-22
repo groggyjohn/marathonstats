@@ -8,8 +8,6 @@
 
     <!-- Load Plotly for charting -->
     <script src="https://cdn.plot.ly/plotly-3.5.1.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js">
-    </script>
 
     <style>
         .group-cell {
@@ -319,7 +317,7 @@
             stats.createFinisherPercentagePlot('percentage-plot-1');
             stats.createHistogramPlot('plot-area-1');
             stats.createHistogramPlot('plot-area-2');
-            stats.populateTableMain('category-data');
+            stats.createCategoryTable('category-data');
         };
 
 
