@@ -1,5 +1,5 @@
 import * as myData from "./data.js";
-import { histogramData } from "./data.js";
+import { histogramData } from "./data.withoutallcats.js";
 import { histogramDataRef } from "./data.withallcats.js";
 
 function findEntry(histo, y, g, c) {
