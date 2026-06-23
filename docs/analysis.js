@@ -37,6 +37,9 @@ const HEADER_TXT = {
     "peak": "Peak",
 };
 
+const ALL_CATS = "All Categories";
+const ALL_GENS = "All Genders";
+
 function secondsToHms(totalSeconds) {
     if (totalSeconds === 0) {
         return "-";
@@ -54,9 +57,11 @@ export function createCategoryTable(wrapperId) {
     const selectGenderId = `${wrapperId}-select-gender`;
     const selectCatId = `${wrapperId}-select-cat`;
     const tableId = `${wrapperId}-table`;
+    const chartId = `${wrapperId}-plot`;
 
     // Inject the HTML controls for this instance
     wrapper.innerHTML = `
+        <div id="${chartId}" style="width: 100%"></div>
         <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
             <div>
                 <label for="${selectGenderId}">Gender Filter</label>
@@ -68,7 +73,7 @@ export function createCategoryTable(wrapperId) {
                 <select id="${selectCatId}"></select>
             </div>
         </div>
-            <div id="${tableId}">
+        <div id="${tableId}">
         </div>
     `;
     const genderElement = document.getElementById(selectGenderId);
@@ -91,6 +96,49 @@ export function createCategoryTable(wrapperId) {
             </table>
     `;
         populateTable(tableId, genderElement.value, catElement.value);
+        render();
+    };
+
+    const render = () => {
+        let category = catElement.value;
+        let gender = genderElement.value;
+
+        if (category === "off" || gender === "off") {
+            category = ALL_CATS;
+            gender = ALL_GENS;
+        }
+
+        // Filter for the specific year and category
+        let records = histogramData.filter((r) => r.gender === gender && r.category === category);
+
+        // Define the line plot trace
+        const traces = [];
+        ["fastest", "slowest", "average"].forEach((stat) => {
+            traces.push({
+                x: records.map((y) => y.year),
+                y: records.map((y) => y[stat]),
+                name: stat,
+                type: "lines+marker",
+            });
+        });
+        const layout = {
+            title: {
+                text: `Age Category Ranges <br><span style="font-size:12px;color:#666;">${category} | ${gender}</span>`,
+            },
+            height: 400,
+            margin: { t: 30, b: 50, l: 50, r: 50 },
+            hovermode: "x",
+            //dragmode: false
+        };
+
+        const figure = {
+            displayModeBar: false,
+            responsive: true,
+            scrollZoom: false,
+            doubleClick: "reset",
+        };
+
+        Plotly.newPlot(chartId, traces, layout, figure);
     };
 
     genderElement.addEventListener("change", updateTable);
@@ -160,10 +208,7 @@ export function createYearlyTotalsPlot(wrapperId, mode) {
     const summaryData = histogramData.filter((row) => row.category === "All Categories");
 
     // Get unique years and sort them HIGHEST to LOWEST
-    const years = [...new Set(summaryData.map((row) => row.year))].sort((
-        a,
-        b,
-    ) => a - b);
+    const years = [...new Set(summaryData.map((row) => row.year))].sort((a, b) => a - b);
     const genders = [...new Set(summaryData.map((row) => row.gender))];
 
     const totalsByYearGender = {};
@@ -412,13 +457,13 @@ export function createHistogramPlot(wrapperId) {
             ],
             responsive: true,
             scrollZoom: false,
-            doubleClick: "reset",
+            doubleClick: "reset", // needed to reuse the xaxis range setting, instead of using 'all data' range.
         };
 
         Plotly.newPlot(chartId, traces, layout, figure);
     };
 
-    // 4. Initialize Dropdowns for THIS instance
+    // Initialize Dropdowns
     const years = [...new Set(histogramData.map((r) => r.year))].sort((a, b) => b - a);
     const yearEl = document.getElementById(yearId);
     const catEl = document.getElementById(catId);
@@ -431,8 +476,7 @@ export function createHistogramPlot(wrapperId) {
             ...new Set(
                 histogramData.filter((r) => r.year == yearEl.value).map((r) => r.category),
             ),
-        ]
-            .filter((c) => c !== "All Categories").sort();
+        ].filter((c) => c !== "All Categories").sort();
 
         ["All Categories", ...cats].forEach((c) => catEl.add(new Option(c, c)));
         render();
