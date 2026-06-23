@@ -99,6 +99,12 @@ export function createCategoryTable(wrapperId) {
         render();
     };
 
+    const tickVals = [];
+    for (let a = 0; a < 26*60*60; a+=2*60*60) {
+        tickVals.push(a + (2*60*60));
+    }
+    const tickTexts = tickVals.map(s => secondsToHms(s));
+
     const render = () => {
         let category = catElement.value;
         let gender = genderElement.value;
@@ -106,18 +112,21 @@ export function createCategoryTable(wrapperId) {
         if (category === "off" || gender === "off") {
             category = ALL_CATS;
             gender = ALL_GENS;
-        }
+        };
 
         // Filter for the specific year and category
-        let records = histogramData.filter((r) => r.gender === gender && r.category === category);
+        const records = histogramData.filter((r) => r.gender === gender && r.category === category);
 
         // Define the line plot trace
         const traces = [];
-        ["fastest", "slowest", "average"].forEach((stat) => {
+        ["fastest", "slowest", "average", "peak"].forEach((stat) => {
+            const txt = records.map( (y) => secondsToHms(y[stat]));
             traces.push({
                 x: records.map((y) => y.year),
                 y: records.map((y) => y[stat]),
                 name: stat,
+                text: txt,
+                hovertemplate : "%{text}",
                 type: "lines+marker",
             });
         });
@@ -126,9 +135,21 @@ export function createCategoryTable(wrapperId) {
                 text: `Age Category Ranges <br><span style="font-size:12px;color:#666;">${category} | ${gender}</span>`,
             },
             height: 400,
-            margin: { t: 30, b: 50, l: 50, r: 50 },
+            margin: { t: 60, b: 50, l: 50, r: 50 },
             hovermode: "x",
-            //dragmode: false
+            yaxis: {
+                //title: {text: "Time"},
+                autorangeoptions: {
+                    include: 2*60*60,
+                },
+                //range: [2*60*60, 26*60*60],
+                //nticks: 10,
+                //fixedrange: true,
+                ticktext: tickTexts,
+                tickvals: tickVals,
+                automargin: true,
+            },
+            dragmode: false,
         };
 
         const figure = {
