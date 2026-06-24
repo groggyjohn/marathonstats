@@ -7,7 +7,8 @@ const GENDER_COLORS = {
     "other": "#7f7f7f", // Gray (for any fallback)
 };
 const exactOrder = ["male", "female", "non-binary"];
-const stringData = ["year", "gender", "category", "count"];
+const stringData = ["year", "gender", "category"];
+const numberData = ["count"];
 const timeData = ["fastest", "slowest", "average", "q1", "q2", "q3", "peak"];
 
 const HEADER_LUT_ORDER = [
@@ -130,6 +131,15 @@ function populateTable(tableId, gender, cat) {
         const tr = document.createElement("tr");
 
         stringData.forEach((item) => {
+            const td = document.createElement("td");
+            td.textContent = row[item];
+            // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
+            td.setAttribute("data-label", HEADER_TXT[item]);
+            td.setAttribute("style", "background-color:#f0ffff");
+            //td.setAttribute("style", "color:#0056b3");
+            tr.appendChild(td);
+        });
+        numberData.forEach((item) => {
             const td = document.createElement("td");
             td.textContent = row[item];
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label

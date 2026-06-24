@@ -1,0 +1,76 @@
+/* The container holding all your plot instances */
+.plots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+/* Styling for each individual plot "card" */
+.plot-instance {
+    width: 100%;
+    min-width: 0;
+    background: white;
+    border: 1px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    /*
+            display: flex;
+            flex-direction: column;
+            */
+}
+
+/* Ensure the chart div itself fills the container */
+[id$="-chart"] {
+    width: 100% !important;
+
+    /* INFO: to override plotly settings */
+    /* height: 400px !important; */
+}
+
+/* Make the internal controls look like a neat toolbar */
+.controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #ddd;
+    margin-bottom: 10px;
+}
+
+.controls-row select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.dashboard {
+    background-color: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin: 0 auto;
+}
+
+select {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 50px;
+}
+
+label {
+    font-size: 12px;
+    color: #333;
+}
+
+.js-plotly-plot .plotly .cursor-ew-resize {
+    cursor: crosshair !important;
+}
