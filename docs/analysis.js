@@ -135,7 +135,7 @@ function populateTable(tableId, gender, cat) {
             td.textContent = row[item];
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
             td.setAttribute("data-label", HEADER_TXT[item]);
-            td.setAttribute("style", "background-color:#f0ffff");
+            td.setAttribute("style", "background-color:#e6e6e6");
             //td.setAttribute("style", "color:#0056b3");
             tr.appendChild(td);
         });
