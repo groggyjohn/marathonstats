@@ -245,14 +245,17 @@ export function createYearlyTotalsPlot(wrapperId, mode, agecat = "All Categories
             hovermode: "x",
 
             xaxis: {
+                ticklabelstandoff: 10,
+                autorange: true,
                 autorangeoptions: {
-                    include: [2014, 2026]
+                    minallowed: 2013,
+                    maxallowed: 2027,
                 },
             },
             yaxis: {
-                ticksuffix: "",
+                autorange: true,
                 autorangeoptions: {
-                    include: [0, 5]
+                    include: 5
                 },
             },
 
@@ -269,6 +272,7 @@ export function createYearlyTotalsPlot(wrapperId, mode, agecat = "All Categories
             // Show overall + gender counts
             layout.title.text = `Mass Finishers Totals | ${agecat}`;
             layout.yaxis.ticksuffix = "";
+            layout.yaxis.autorangeoptions.minallowed = 0;
             Plotly.newPlot(chartId, genderCountTraces, layout, figure);
         } else {
             // Percent mode: compute percent per year for each gender and omit 'all' trace
@@ -305,6 +309,7 @@ export function createYearlyTotalsPlot(wrapperId, mode, agecat = "All Categories
             layout.title.text = `Mass Finishers by Percentage | ${agecat}`;
             layout.yaxis.tickformat = ".f";
             layout.yaxis.ticksuffix = "%";
+            layout.yaxis.autorangeoptions.minallowed = -1;
 
             Plotly.newPlot(chartId, genderPercentTraces, layout, figure);
         }
