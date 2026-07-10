@@ -56,11 +56,11 @@
         <h2>Outline</h2>
         <p>
 
-            This project presents various views of mass participation finishing times from runners of the London
+            This page presents various views of mass participation finishing times from runners of the London
             Marathon.
         </p>
         <p>
-            This page has interactive plots, and the interactions works best
+            It has interactive plots, and the interactions works best
             with a computer which has a mouse or trackpad.
 
             The plots work on mobile devices, but some things work differently.
@@ -74,12 +74,20 @@
             <li>2020: No London mass participation event due to covid. Results are from the virtual marathon where
                 registered runners
                 completed their own route and uploaded their time via the official app.</li>
+            <li>From 2014 to 2020, age-range categories for over 70+ differed. From 2021 onwards the
+                age categories settled, starting with 18-39, then 5-year intervals up to a maximum age cat of 80+.
+            </li>
         </ul>
         <h2>Overall Totals</h2>
+
+        <div id="summary" class="plot-instance">
+        </div>
+        <!-- 
         <div class="plots-grid">
             <div id="summary-count" class="plot-instance"></div>
             <div id="summary-percent" class="plot-instance"></div>
         </div>
+        -->
 
         <h2>Overall Finish</h2>
         <div id="percentage-plot-1" class="plot-instance" style="margin-top:10px"></div>
@@ -95,9 +103,6 @@
         <h2>Age Category Ranges</h2>
         <p>Comments:</p>
         <ul>
-            <li>Age categories range classifications for the over 70+ varied from 2014 to 2020. From 2021 onwards the
-                age categories stabilised, with a maximum age cat of 80+.
-            </li>
             <li>Top 25/50/75% : Gives percentage of finishers that ran under the listed time.</li>
             <li>Peak : Gives approximate time when most runners in category were finishing.
                 If no single maximum peak, entry is left blank.
@@ -113,8 +118,9 @@
 
         // Wait for the page to load, then initialize using the 'histogramData' from data.js
         window.onload = function () {
-            stats.createYearlyTotalsPlot('summary-count', 'count');
-            stats.createYearlyTotalsPlot('summary-percent', 'percent');
+            //stats.createYearlyTotalsPlot('summary-count', 'count');
+            //stats.createYearlyTotalsPlot('summary-percent', 'percent');
+            stats.createYearlyTotalsByCatPlot('summary');
             stats.createFinisherPercentagePlot('percentage-plot-1');
             stats.createHistogramPlot('plot-area-1');
             stats.createHistogramPlot('plot-area-2');

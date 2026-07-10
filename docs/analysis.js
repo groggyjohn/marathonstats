@@ -135,7 +135,7 @@ function populateTable(tableId, gender, cat) {
             td.textContent = row[item];
             // CRITICAL FOR MOBILE: This sets the attribute CSS uses to display the label
             td.setAttribute("data-label", HEADER_TXT[item]);
-            td.setAttribute("style", "background-color:#e6e6e6");
+            td.setAttribute("style", "background-color:#f0ffff");
             //td.setAttribute("style", "color:#0056b3");
             tr.appendChild(td);
         });
@@ -158,7 +158,42 @@ function populateTable(tableId, gender, cat) {
     });
 }
 
-export function createYearlyTotalsPlot(wrapperId, mode) {
+
+export function createYearlyTotalsByCatPlot(wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+    const catId = `${wrapperId}-cat`;
+    const chartTotalId = `${wrapperId}-chart-total`;
+    const chartPercentId = `${wrapperId}-chart-percent`;
+
+    // Inject the HTML structure
+    wrapper.innerHTML = `
+        <div class="controls-row" style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px;">
+            <label for="${catId}">Age Category</label>
+            <select id="${catId}"></select>
+        </div>
+        <div class="plots-grid">
+            <div id="${chartTotalId}" style="width: 100%"></div>
+            <div id="${chartPercentId}" style="width: 100%"></div>
+        </div>
+    `;
+
+    // Populate the age-cat with all age cats found across all years.
+    const catElement = document.getElementById(catId);
+    const cats = [...new Set(histogramData.map((r) => r.category))]
+        .filter((c) => c !== "All Categories").sort();
+    ["All Categories", ...cats].forEach((c) => catElement.add(new Option(c, c)));
+
+    const updatePlots = () => {
+        createYearlyTotalsPlot(chartTotalId, "count", catElement.value)
+        createYearlyTotalsPlot(chartPercentId, "percent", catElement.value)
+    }
+    catElement.addEventListener("change", updatePlots);
+
+    createYearlyTotalsPlot(chartTotalId, "count", "All Categories")
+    createYearlyTotalsPlot(chartPercentId, "percent", "All Categories")
+}
+
+export function createYearlyTotalsPlot(wrapperId, mode, agecat = "All Categories") {
     const wrapper = document.getElementById(wrapperId);
     const chartId = `${wrapperId}-chart`;
 
@@ -167,9 +202,9 @@ export function createYearlyTotalsPlot(wrapperId, mode) {
     `;
 
     // Get only the "All Categories" rows
-    const summaryData = histogramData.filter((row) => row.category === "All Categories");
+    const summaryData = histogramData.filter((row) => row.category === agecat);
 
-    // Get unique years and sort them HIGHEST to LOWEST
+    // Get unique years and sort them
     const years = [...new Set(summaryData.map((row) => row.year))].sort((
         a,
         b,
@@ -209,14 +244,19 @@ export function createYearlyTotalsPlot(wrapperId, mode) {
             title: { text: "TBD" },
             hovermode: "x",
 
+            xaxis: {
+                autorangeoptions: {
+                    include: [2014, 2026]
+                },
+            },
             yaxis: {
                 ticksuffix: "",
                 autorangeoptions: {
-                    include: 0,
+                    include: [0, 5]
                 },
             },
 
-            margin: { t: 50, l: 50, r: 50, b: 50 },
+            margin: { t: 50, l: 40, r: 0, b: 50 },
             legend: {
                 orientation: "h",
                 xanchor: "left",
@@ -227,7 +267,7 @@ export function createYearlyTotalsPlot(wrapperId, mode) {
 
         if (mode === "count") {
             // Show overall + gender counts
-            layout.title.text = "Mass Finishers Totals";
+            layout.title.text = `Mass Finishers Totals | ${agecat}`;
             layout.yaxis.ticksuffix = "";
             Plotly.newPlot(chartId, genderCountTraces, layout, figure);
         } else {
@@ -262,7 +302,7 @@ export function createYearlyTotalsPlot(wrapperId, mode) {
                 };
             });
 
-            layout.title.text = "Mass Finishers by Percentage";
+            layout.title.text = `Mass Finishers by Percentage | ${agecat}`;
             layout.yaxis.tickformat = ".f";
             layout.yaxis.ticksuffix = "%";
 
@@ -547,8 +587,7 @@ export function createFinisherPercentagePlot(wrapperId) {
         const layout = {
             title: {
                 text:
-                    `Percentage Finished by Time (${year})<br><span style="font-size:12px;color:#666;">${category} | ${
-                        gender === "all" ? "All Genders" : gender.charAt(0).toUpperCase() + gender.slice(1)
+                    `Percentage Finished by Time (${year})<br><span style="font-size:12px;color:#666;">${category} | ${gender === "all" ? "All Genders" : gender.charAt(0).toUpperCase() + gender.slice(1)
                     }</span>`,
             },
             height: 400,
